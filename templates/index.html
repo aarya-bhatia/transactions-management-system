@@ -1,62 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "partials/base.html" %}
+{% block content %}
+<h1>Personal Transaction Management System</h1>
 
-<head>
-    <title>Flask Template Example</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/yegor256/tacit@gh-pages/tacit-css-1.9.0.min.css" /> -->
-    <link rel="stylesheet" href="https://unpkg.com/chota@latest">
+<h4>Uploads</h4>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Account Name</th>
+            <th>File Path</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for file in uploads %}
+        <tr>
+            <td>{{ file["id"] }}</td>
+            <td>{{ file["account_name"] }}</td>
+            <td>{{ file["file_path"] }}</td>
+            <td>{{ file["created_at"] }}</td>
+            <td>
+                <div>
+                    <a href="/delete_upload/{{ file['id'] }}">Delete</a>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-</head>
+{% include "partials/new-file-upload-form.html" %}
 
-<body>
-    <div class="container">
-        <h1>Personal Transaction Management System</h1>
-
-
-        <h4>Uploads</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>Account Name</th>
-                    <th>File Path</th>
-                    <th>Created At</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for file in uploads %}
-                <tr>
-                    <td>{{ file["account_name"] }}</td>
-                    <td>{{ file["file_path"] }}</td>
-                    <td>{{ file["created_at"] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h4>New Upload</h4>
-        <form action="/upload_file" method="post" enctype="multipart/form-data">
-            <label for="uploaded_file">Please select a file to upload:</label>
-            <input type="file" id="uploaded_file" name="uploaded_file" required>
-            <br />
-
-            <label for="user_filename">Rename the file (optional):</label>
-            <input type="text" id="user_filename" name="user_filename">
-            <br />
-
-            <label for="account_name">Select Account:</label>
-            <select id="account_name" name="account_name" required>
-                {% for account in accounts %}
-                <option value="{{ account }}">{{ account }}</option>
-                {% endfor %}
-            </select>
-            <br />
-
-            <button type="submit">Upload</button>
-        </form>
-    </div>
-
-</body>
-
-</html>
+</div>
+{% endblock %}

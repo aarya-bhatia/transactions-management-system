@@ -1,0 +1,20 @@
+<h4>New Upload</h4>
+<form action="/upload_file" method="post" enctype="multipart/form-data">
+    <label for="uploaded_file">Please select a file to upload:</label>
+    <input type="file" id="uploaded_file" name="uploaded_file" required>
+    <br />
+
+    <label for="user_filename">Rename the file (optional):</label>
+    <input type="text" id="user_filename" name="user_filename">
+    <br />
+
+    <label for="account_name">Select Account:</label>
+    <select id="account_name" name="account_name" required>
+        {% for account in accounts %}
+        <option value="{{ account }}">{{ account }}</option>
+        {% endfor %}
+    </select>
+    <br />
+
+    <button type="submit">Upload</button>
+</form>
