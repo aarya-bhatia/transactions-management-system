@@ -43,6 +43,21 @@ def upload_exists(file_path):
     return ans
 
 
+def get_upload(id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT id, account_name, file_path, created_at FROM uploads WHERE id=?', (id,))
+    ans = cursor.fetchone()
+    conn.close()
+    return {
+        "id": ans[0],
+        "account_name": ans[1],
+        "file_path": ans[2],
+        "created_at": ans[3]
+    }
+
+
 def delete_upload(id):
     conn = get_connection()
     cursor = conn.cursor()

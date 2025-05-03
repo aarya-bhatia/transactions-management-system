@@ -1,11 +1,9 @@
 from flask import Flask, jsonify, request, render_template, redirect
 import os
 import time
-from flask import session
-from dotenv import load_dotenv
-from datetime import datetime
 from config import accounts, UPLOAD_DIR
-from uploads import get_uploads, delete_upload, upload_exists, add_upload
+from uploads import get_uploads, delete_upload, upload_exists, add_upload, get_upload
+from transactions import DiscoverTransactionsReader, transactions_as_json
 
 app = Flask(__name__)
 
@@ -61,6 +59,26 @@ def POST_upload_file():
     except Exception as e:
         print(e)
         return "File not saved.", 500
+
+
+@app.route('/process_transactions/<int:upload_id>')
+def GET_process_transactions(upload_id):
+    upload = get_upload(upload_id)
+    print("processing upload: ", upload)
+    if not upload:
+        return "upload does not exist", 400
+
+    if not os.path.exists(upload["file_path"]):
+        return "uploaded file not found", 500
+
+    with open(upload["file_path"], "r") as file:
+        if upload["account_name"] == "discover":
+            reader = DiscoverTransactionsReader(file)
+            transactions = reader.get_transactions()
+            res = transactions_as_json(transactions)
+            return jsonify({"transactions": res}), 200
+        else:
+            return "no available parsers for account: " + upload["account_name"], 500
 
 
 if __name__ == '__main__':
