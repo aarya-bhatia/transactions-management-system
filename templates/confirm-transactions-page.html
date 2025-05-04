@@ -1,0 +1,42 @@
+{% extends "partials/base.html" %}
+{% block content %}
+<h1>Confirm Transactions</h1>
+
+<h4>Transactions</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Account Name</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transactions %}
+        <tr>
+            <td>{{ t["account_name"] }}</td>
+            <td>{{ t["date"] }}</td>
+            <td>{{ t["description"] }}</td>
+            <td>{{ t["amount"] }}</td>
+            <td>{{ t["type"] }}</td>
+            <td>{{ t["category"] }}</td>
+            <td></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Action</h4>
+
+<a class="button success" href="/accept_transactions/{{ file_id }}">ACCEPT</a>
+<a class="button error" href="/discard_transactions/{{ file_id }}">DISCARD</a>
+
+<br />
+<br />
+<br />
+<br />
+
+{% endblock %}

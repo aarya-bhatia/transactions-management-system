@@ -109,7 +109,7 @@ class DiscoverTransactionsReader:
         return self.reader.read_file(self.file)
 
 
-def transactions_as_json(transactions: list[Transaction]) -> list[any]:
+def transactions_as_dict(transactions: list[Transaction]) -> list[any]:
     result = []
 
     for t in transactions:

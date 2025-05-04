@@ -22,15 +22,18 @@ def init():
             )
         ''')
 
+        cursor.execute('DROP TABLE IF EXISTS transactions')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            source_id INTEGER NOT NULL,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            description TEXT,
-            type TEXT CHECK(type IN ('DEBIT', 'CREDIT')) NOT NULL,
-            amount REAL NOT NULL,
-            FOREIGN KEY (source_id) REFERENCES uploads (id)
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_path TEXT NOT NULL,
+                account_name TEXT NOT NULL,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                description TEXT,
+                type TEXT CHECK(type IN ('DEBIT', 'CREDIT')) NOT NULL,
+                amount REAL NOT NULL,
+                category TEXT NOT NULL
             )
         ''')
 

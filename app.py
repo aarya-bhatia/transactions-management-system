@@ -3,14 +3,22 @@ import os
 import time
 from config import accounts, UPLOAD_DIR
 from uploads import get_uploads, delete_upload, upload_exists, add_upload, get_upload
-from transactions import DiscoverTransactionsReader, transactions_as_json
+from transactions import DiscoverTransactionsReader, transactions_as_dict
+from dao import save_transactions, get_transactions
 
 app = Flask(__name__)
+
+pending_transactions = {}
 
 
 @app.route('/')
 def GET_index():
     return render_template('index.html', uploads=get_uploads(), accounts=accounts)
+
+
+@app.route('/transactions')
+def GET_transactions():
+    return render_template('view-transactions.html', transactions=get_transactions())
 
 
 @app.route('/delete_upload/<int:id>', methods=['GET'])
@@ -75,10 +83,32 @@ def GET_process_transactions(upload_id):
         if upload["account_name"] == "discover":
             reader = DiscoverTransactionsReader(file)
             transactions = reader.get_transactions()
-            res = transactions_as_json(transactions)
-            return jsonify({"transactions": res}), 200
+            transactions = transactions_as_dict(transactions)
+            for row in transactions:
+                row["account_name"] = upload["account_name"]
+                row["file_path"] = upload["file_path"]
+            pending_transactions[upload_id] = transactions
+            return render_template("confirm-transactions-page.html", transactions=transactions, file_id=upload_id), 200
         else:
             return "no available parsers for account: " + upload["account_name"], 500
+
+
+@app.route("/accept_transactions/<int:upload_id>")
+def GET_accept_transactions(upload_id):
+    if upload_id not in pending_transactions:
+        return "", 400
+
+    transactions = pending_transactions[upload_id]
+    save_transactions(transactions)
+    del pending_transactions[upload_id]
+    return "", 200
+
+
+@app.route("/discard_transactions/<int:upload_id>")
+def GET_discard_transactions(upload_id):
+    if upload_id in pending_transactions:
+        del pending_transactions[upload_id]
+    return "", 200
 
 
 if __name__ == '__main__':
