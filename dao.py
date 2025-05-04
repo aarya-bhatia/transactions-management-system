@@ -1,4 +1,5 @@
 from database import get_connection
+from transactions import Transaction
 
 
 def get_transactions():
@@ -28,7 +29,7 @@ def get_transactions():
     return t
 
 
-def save_transactions(transactions):
+def save_transactions(transactions: list[Transaction]):
     if not transactions:
         return
 
@@ -36,19 +37,10 @@ def save_transactions(transactions):
     cursor = conn.cursor()
 
     for transaction in transactions:
-        file_path = transaction["file_path"]
-        account_name = transaction["account_name"]
-        date = transaction["date"]
-        description = transaction["description"]
-        type = transaction["type"]
-        amount = transaction["amount"]
-        category = transaction["category"]
-
         cursor.execute('''
             INSERT INTO transactions (file_path, account_name, date, description, type, amount, category)
-                       VALUES (?, ?, ?, ?, ?, ?, ?)
-                       ''',
-                       (file_path, account_name, date, description, type, amount, category))
+            VALUES (:file_path, :account_name, :date, :description, :type, :amount, :category)
+            ''', transaction.to_dict())
 
     conn.commit()
     conn.close()

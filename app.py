@@ -3,7 +3,7 @@ import os
 import time
 from config import accounts, UPLOAD_DIR
 from uploads import get_uploads, delete_upload, upload_exists, add_upload, get_upload
-from transactions import DiscoverTransactionsReader, transactions_as_dict
+from transactions import DiscoverTransactionsReader
 from dao import save_transactions, get_transactions
 
 app = Flask(__name__)
@@ -83,12 +83,12 @@ def GET_process_transactions(upload_id):
         if upload["account_name"] == "discover":
             reader = DiscoverTransactionsReader(file)
             transactions = reader.get_transactions()
-            transactions = transactions_as_dict(transactions)
-            for row in transactions:
-                row["account_name"] = upload["account_name"]
-                row["file_path"] = upload["file_path"]
+            for t in transactions:
+                t.account_name = upload["account_name"]
+                t.file_path = upload["file_path"]
             pending_transactions[upload_id] = transactions
-            return render_template("confirm-transactions-page.html", transactions=transactions, file_id=upload_id), 200
+            transactions_serialized = [t.to_dict() for t in transactions]
+            return render_template("confirm-transactions-page.html", transactions=transactions_serialized, file_id=upload_id), 200
         else:
             return "no available parsers for account: " + upload["account_name"], 500
 

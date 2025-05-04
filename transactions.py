@@ -21,6 +21,20 @@ class Transaction:
     amount: float
     category: str
 
+    account_name: str
+    file_path: str
+
+    def to_dict(self) -> dict:
+        return {
+            "date": self.date.strftime("%Y-%m-%d"),
+            "description": self.description,
+            "type": self.type.name,
+            "amount": f"${self.amount:.2f}",
+            "category": self.category,
+            "account_name": self.account_name,
+            "file_path": self.file_path
+        }
+
 
 @dataclass
 class TransactionReaderColumns:
@@ -79,7 +93,9 @@ class TransactionReader:
                 date=date,
                 description=description,
                 type=type,
-                category=category or DEFAULT_CATEGORY
+                category=category or DEFAULT_CATEGORY,
+                file_path="",
+                account_name=""
             )
         except ValueError:
             return None
@@ -109,18 +125,97 @@ class DiscoverTransactionsReader:
         return self.reader.read_file(self.file)
 
 
-def transactions_as_dict(transactions: list[Transaction]) -> list[any]:
-    result = []
+class CapitalOneTransactionsReader:
 
-    for t in transactions:
-        row = {
-            "date": t.date.strftime("%Y-%m-%d"),
-            "description": t.description,
-            "type": t.type.name,
-            "amount": f"${t.amount:.2f}",
-            "category": t.category
-        }
+    def __init__(self, file):
+        self.file = file
+        self.reader = TransactionReader(column_info_parser=DiscoverTransactionsReader.column_info_parser,
+                                        date_parser=DiscoverTransactionsReader.date_parser, type_parser=DiscoverTransactionsReader.type_parser)
 
-        result.append(row)
+    def date_parser(date_str: str) -> datetime.date:
+        return datetime.strptime(date_str, "%m/%d/%Y")
 
-    return result
+    def type_parser(amount: float) -> TransactionType:
+        if amount < 0:
+            return TransactionType.CREDIT
+        else:
+            return TransactionType.DEBIT
+
+    def column_info_parser(headers: list[str]) -> TransactionReaderColumns:
+        return TransactionReaderColumns(
+            date_column=0, description_column=2, amount_column=3, category_column=5)
+
+    def get_transactions(self) -> list[Transaction]:
+        return self.reader.read_file(self.file)
+
+
+class BiltMastercardTransactionsReader:
+
+    def __init__(self, file):
+        self.file = file
+        self.reader = TransactionReader(column_info_parser=DiscoverTransactionsReader.column_info_parser,
+                                        date_parser=DiscoverTransactionsReader.date_parser, type_parser=DiscoverTransactionsReader.type_parser)
+
+    def date_parser(date_str: str) -> datetime.date:
+        return datetime.strptime(date_str, "%m/%d/%Y")
+
+    def type_parser(amount: float) -> TransactionType:
+        if amount < 0:
+            return TransactionType.CREDIT
+        else:
+            return TransactionType.DEBIT
+
+    def column_info_parser(headers: list[str]) -> TransactionReaderColumns:
+        return TransactionReaderColumns(
+            date_column=0, description_column=2, amount_column=3, category_column=5)
+
+    def get_transactions(self) -> list[Transaction]:
+        return self.reader.read_file(self.file)
+
+
+class AmericanExpressTransactionsReader:
+
+    def __init__(self, file):
+        self.file = file
+        self.reader = TransactionReader(column_info_parser=DiscoverTransactionsReader.column_info_parser,
+                                        date_parser=DiscoverTransactionsReader.date_parser, type_parser=DiscoverTransactionsReader.type_parser)
+
+    def date_parser(date_str: str) -> datetime.date:
+        return datetime.strptime(date_str, "%m/%d/%Y")
+
+    def type_parser(amount: float) -> TransactionType:
+        if amount < 0:
+            return TransactionType.CREDIT
+        else:
+            return TransactionType.DEBIT
+
+    def column_info_parser(headers: list[str]) -> TransactionReaderColumns:
+        return TransactionReaderColumns(
+            date_column=0, description_column=2, amount_column=3, category_column=5)
+
+    def get_transactions(self) -> list[Transaction]:
+        return self.reader.read_file(self.file)
+
+
+class FidelityVisaTransactionsReader:
+
+    def __init__(self, file):
+        self.file = file
+        self.reader = TransactionReader(column_info_parser=DiscoverTransactionsReader.column_info_parser,
+                                        date_parser=DiscoverTransactionsReader.date_parser, type_parser=DiscoverTransactionsReader.type_parser)
+
+    def date_parser(date_str: str) -> datetime.date:
+        return datetime.strptime(date_str, "%m/%d/%Y")
+
+    def type_parser(amount: float) -> TransactionType:
+        if amount < 0:
+            return TransactionType.CREDIT
+        else:
+            return TransactionType.DEBIT
+
+    def column_info_parser(headers: list[str]) -> TransactionReaderColumns:
+        return TransactionReaderColumns(
+            date_column=0, description_column=2, amount_column=3, category_column=5)
+
+    def get_transactions(self) -> list[Transaction]:
+        return self.reader.read_file(self.file)

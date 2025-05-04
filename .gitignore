@@ -1,5 +1,5 @@
 uploads/
-app.db
+*.db
 *.env
 *.swp
 *.log
