@@ -1,12 +1,54 @@
+import seaborn as sns  # matplotlib theme
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import matplotlib.pyplot as plt
 from collections import defaultdict
+import math
+
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend before importing pyplot
+
+sns.set_theme()
 
 
 def format_currency(value):
     return f"${value:,.2f}"
+
+
+def draw_bar_chart(data, xlabel="Value", title="Category Distribution", filename="bar_chart.png", color="skyblue"):
+    # Sort data by value (optional but clearer)
+    sorted_items = sorted(data.items(), key=lambda item: item[1], reverse=True)
+    labels = [k for k, v in sorted_items]
+    values = [v for k, v in sorted_items]
+
+    # Calculate percentages
+    total = sum(values)
+    percentages = [f"{(v/total)*100:.1f}%" for v in values]
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    bars = plt.barh(labels, values, color=color)
+    plt.xlabel(xlabel)
+    plt.title(title)
+
+    # Add value labels on the bars
+    for bar, pct in zip(bars, percentages):
+        plt.text(bar.get_width() + 1, bar.get_y() +
+                 bar.get_height()/2, pct, va='center')
+
+    plt.tight_layout()
+    plt.savefig(filename)
+
+
+def draw_plots(stats):
+    category_total_expenses = stats["category_total_expenses"]
+    category_total_income = stats["category_total_income"]
+
+    draw_bar_chart(category_total_expenses, "Amounts",
+                   "Total Expenses", "static/total_expenses.png")
+    draw_bar_chart(category_total_income, "Amounts",
+                   "Total income", "static/total_income.png")
 
 
 def get_summary_stats(uploads, transactions):
@@ -55,6 +97,16 @@ def get_summary_stats(uploads, transactions):
         amount = row['amount']
         category_income_result[category][month_year] = amount
 
+    category_total_expenses = expenses[["amount", "category"]].groupby("category")[
+        "amount"].sum().reset_index()
+    category_total_income = income[["amount", "category"]].groupby("category")[
+        "amount"].sum().reset_index()
+
+    category_total_expenses = dict(
+        zip(category_total_expenses.category, category_total_expenses.amount))
+    category_total_income = dict(
+        zip(category_total_income.category, category_total_income.amount))
+
     return {
         "total_expense": format_currency(total_expense),
         "total_income": format_currency(total_income),
@@ -64,4 +116,6 @@ def get_summary_stats(uploads, transactions):
         "monthly_paycheck_income": monthly_paycheck_result,
         "category_expenses": category_expenses_result,
         "category_income": category_income_result,
+        "category_total_expenses": category_total_expenses,
+        "category_total_income": category_total_income,
     }

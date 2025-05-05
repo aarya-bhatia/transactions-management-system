@@ -6,7 +6,7 @@ from uploads import get_uploads, delete_upload, upload_exists, add_upload, get_u
 from parsers import DiscoverTransactionsReader, BiltMastercardTransactionsReader, AmericanExpressTransactionsReader, CapitalOneTransactionsReader, FidelityVisaTransactionsReader
 from dao import save_transactions, get_transactions
 from database import init_tables
-from summary import get_summary_stats
+from summary import get_summary_stats, draw_plots
 import sqlite3
 
 app = Flask(__name__)
@@ -224,9 +224,12 @@ def GET_summary():
     db = get_db()
     transactions = get_transactions(db)
     uploads = get_uploads(db)
+    print("computing stats...")
     stats = get_summary_stats(uploads, transactions)
-    return jsonify(stats)
-    # return render_template("summary.html", stats=stats), 200
+    print("drawing plots...")
+    draw_plots(stats)
+    # return jsonify(stats)
+    return render_template("summary.html", stats=stats), 200
 
 
 if __name__ == '__main__':
