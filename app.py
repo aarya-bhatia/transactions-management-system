@@ -132,26 +132,27 @@ def GET_process_transactions(upload_id):
         else:
             reader = None
 
-        if reader:
-            print("start processing")
-            try:
-                transactions = reader.read_file(file)
-                update_upload_status(db, upload_id, ProcessingStatus.FINISHED)
+        if not reader:
+            return "No parser found for " + upload["account_name"], 500
 
-                for t in transactions:
-                    t.account_name = upload["account_name"]
-                    t.file_path = upload["file_path"]
+        print("start processing")
+        try:
+            transactions = reader.read_file(file)
+            update_upload_status(db, upload_id, ProcessingStatus.FINISHED)
 
-                pending_transactions[upload_id] = transactions
-                transactions_serialized = [t.to_dict() for t in transactions]
+            for t in transactions:
+                t.account_name = upload["account_name"]
+                t.file_path = upload["file_path"]
 
-                return render_template("confirm-transactions-page.html", transactions=transactions_serialized, file_id=upload_id), 200
+            pending_transactions[upload_id] = transactions
+            transactions_serialized = [t.to_dict() for t in transactions]
 
-            except Exception as e:
-                print(f"Failed to parse file: {upload['file_path']}", e)
-                update_upload_status(db, upload_id, ProcessingStatus.READY)
+            return render_template("confirm-transactions-page.html", transactions=transactions_serialized, file_id=upload_id), 200
 
-        return "No parser found for " + upload["account_name"], 500
+        except Exception as e:
+            print(f"Failed to parse file: {upload['file_path']}", e)
+            update_upload_status(db, upload_id, ProcessingStatus.READY)
+            return "Parser failed", 500
 
 
 @app.route("/view_transactions/<int:upload_id>")
