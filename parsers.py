@@ -64,7 +64,8 @@ class FidelityVisaTransactionsReader(TransactionReader):
             description=row[2],
             amount=abs(float(row[4])),
             category=row[5] if 5 < len(row) else DEFAULT_CATEGORY,
-            type=TransactionType.CREDIT if row[1] == "CREDIT" else TransactionType.DEBIT,
+            type=TransactionType.CREDIT if float(
+                row[4]) > 0 else TransactionType.DEBIT,
             file_path="",
             account_name=""
         )

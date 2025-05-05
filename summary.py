@@ -1,11 +1,6 @@
 import seaborn as sns  # matplotlib theme
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-from datetime import datetime
-from collections import defaultdict
-import math
-
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend before importing pyplot
 
@@ -16,7 +11,31 @@ def format_currency(value):
     return f"${value:,.2f}"
 
 
-def draw_bar_chart(data, xlabel="Value", title="Category Distribution", filename="bar_chart.png", color="skyblue"):
+def save_pie_chart(values, labels, title, filename):
+    if len(values) != len(labels):
+        raise ValueError("Length of values and labels must be the same.")
+
+    # Create figure
+    plt.figure(figsize=(5, 5))
+
+    # Create pie chart
+    plt.pie(
+        values,
+        labels=labels,
+        autopct='%1.1f%%',
+        startangle=90,
+        labeldistance=1.1
+    )
+
+    plt.title(title)
+    plt.axis('equal')  # Make sure it's a circle
+
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+
+def save_bar_chart(data, title, filename):
     # Sort data by value (optional but clearer)
     sorted_items = sorted(data.items(), key=lambda item: item[1], reverse=True)
     labels = [k for k, v in sorted_items]
@@ -28,8 +47,8 @@ def draw_bar_chart(data, xlabel="Value", title="Category Distribution", filename
 
     # Plot
     plt.figure(figsize=(8, 6))
-    bars = plt.barh(labels, values, color=color)
-    plt.xlabel(xlabel)
+    bars = plt.barh(labels, values, color="skyblue")
+    plt.xlabel("Amounts")
     plt.title(title)
 
     # Add value labels on the bars
@@ -45,10 +64,44 @@ def draw_plots(stats):
     category_total_expenses = stats["category_total_expenses"]
     category_total_income = stats["category_total_income"]
 
-    draw_bar_chart(category_total_expenses, "Amounts",
+    save_bar_chart(category_total_expenses,
                    "Total Expenses", "static/total_expenses.png")
-    draw_bar_chart(category_total_income, "Amounts",
+    save_bar_chart(category_total_income,
                    "Total income", "static/total_income.png")
+
+    if stats["pie_chart_values"]:
+        save_pie_chart(values=stats["pie_chart_values"],
+                       labels=stats["pie_chart_labels"],
+                       title="Balance Summary",
+                       filename="static/balance_summary.png")
+
+
+def create_pivot_table_html(df):
+    # Convert 'month' to datetime for proper sorting
+    df['month_dt'] = pd.to_datetime(df['month_year'], format='%b %Y')
+
+    # Pivot using the datetime column as index
+    pivoted = df.pivot_table(index='month_dt', columns='category',
+                             values='amount', aggfunc='sum', fill_value=0)
+
+    # Sort the index (chronologically)
+    pivoted = pivoted.sort_index()
+
+    # Optional: Format datetime back to "Month Year" strings for display
+    pivoted.index = pivoted.index.strftime('%b %Y')
+
+    # Build HTML table
+    html_content = "<table border='1'>"
+    html_content += "<tr><th>Month</th>" + \
+        "".join([f"<th>{col}</th>" for col in pivoted.columns]) + "</tr>"
+
+    for month, row in pivoted.iterrows():
+        html_content += f"<tr><td>{month}</td>" + "".join(
+            [f"<td>{format_currency(val)}</td>" for val in row]) + "</tr>"
+
+    html_content += "</table>"
+
+    return html_content
 
 
 def get_summary_stats(uploads, transactions):
@@ -60,6 +113,8 @@ def get_summary_stats(uploads, transactions):
 
     expenses = df[df["type"] == "DEBIT"]
     income = df[df["type"] == "CREDIT"]
+
+    total_rent = expenses[expenses["category"] == "Rent"]["amount"].sum()
 
     total_expense = expenses["amount"].sum()
     total_income = income["amount"].sum()
@@ -79,24 +134,6 @@ def get_summary_stats(uploads, transactions):
     for _, row in monthly_paycheck.iterrows():
         monthly_paycheck_result[row["month_year"]] = row["amount"]
 
-    category_expenses = expenses[["category", "month_year", "amount"]].groupby(
-        ["category", "month_year"]).sum().reset_index()
-    category_expenses_result = defaultdict(dict)
-    for _, row in category_expenses.iterrows():
-        category = row['category']
-        month_year = row['month_year']
-        amount = row['amount']
-        category_expenses_result[category][month_year] = amount
-
-    category_income = income[["category", "month_year", "amount"]].groupby(
-        ["category", "month_year"]).sum().reset_index()
-    category_income_result = defaultdict(dict)
-    for _, row in category_income.iterrows():
-        category = row['category']
-        month_year = row['month_year']
-        amount = row['amount']
-        category_income_result[category][month_year] = amount
-
     category_total_expenses = expenses[["amount", "category"]].groupby("category")[
         "amount"].sum().reset_index()
     category_total_income = income[["amount", "category"]].groupby("category")[
@@ -107,15 +144,37 @@ def get_summary_stats(uploads, transactions):
     category_total_income = dict(
         zip(category_total_income.category, category_total_income.amount))
 
+    pie_chart_values = None
+    pie_chart_labels = None
+
+    if total_income > 0:
+        total_other_expense = total_expense - \
+            total_savings - total_investment - total_rent
+        pie_chart_values = [
+            total_other_expense/total_income,
+            total_rent/total_income,
+            total_savings/total_income,
+            total_investment/total_income
+        ]
+
+        pie_chart_labels = [
+            "other expenses %",
+            "rent %",
+            "savings %",
+            "investment %"
+        ]
+
     return {
-        "total_expense": format_currency(total_expense),
-        "total_income": format_currency(total_income),
-        "total_paycheck_income": format_currency(total_paycheck_income),
-        "total_savings": format_currency(total_savings),
-        "total_investment": format_currency(total_investment),
+        "pie_chart_values": pie_chart_values,
+        "pie_chart_labels": pie_chart_labels,
+        "total_expense": total_expense,
+        "total_income": total_income,
+        "total_paycheck_income": total_paycheck_income,
+        "total_savings": total_savings,
+        "total_investment": total_investment,
         "monthly_paycheck_income": monthly_paycheck_result,
-        "category_expenses": category_expenses_result,
-        "category_income": category_income_result,
         "category_total_expenses": category_total_expenses,
         "category_total_income": category_total_income,
+        "expense_table_html": create_pivot_table_html(expenses),
+        "income_table_html": create_pivot_table_html(income),
     }

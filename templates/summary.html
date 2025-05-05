@@ -3,8 +3,22 @@
 
 <h4>Summary</h4>
 
+<p>Monthly Expenses</p>
+<br />
+{{ stats["expense_table_html"] | safe }}
+
+<br />
+<p>Monthly Income</p>
+{{ stats["income_table_html"] | safe }}
+
+<br />
 <p>Plots</p>
+
 <img src="{{ url_for('static', filename='total_expenses.png') }}" alt="plot" />
+<br />
 <img src="{{ url_for('static', filename='total_income.png') }}" alt="plot" />
+<br />
+<img src="{{ url_for('static', filename='balance_summary.png') }}" alt="plot" />
+<br />
 
 {% endblock %}
