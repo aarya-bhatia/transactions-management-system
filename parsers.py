@@ -51,7 +51,7 @@ class AmericanExpressTransactionsReader(TransactionReader):
             amount=abs(float(row[2])),
             category=row[3] if 3 < len(row) else DEFAULT_CATEGORY,
             type=TransactionType.CREDIT if float(
-                row[3]) < 0 else TransactionType.DEBIT,
+                row[2]) < 0 else TransactionType.DEBIT,
             file_path="",
             account_name=""
         )
@@ -60,7 +60,7 @@ class AmericanExpressTransactionsReader(TransactionReader):
 class FidelityVisaTransactionsReader(TransactionReader):
     def parse_row(self, row: list[str]) -> Transaction:
         return Transaction(
-            date=datetime.strptime(row[0], "%m/%d/%Y"),
+            date=datetime.strptime(row[0], "%m/%d/%y"),
             description=row[2],
             amount=abs(float(row[4])),
             category=row[5] if 5 < len(row) else DEFAULT_CATEGORY,

@@ -133,18 +133,22 @@ def GET_process_transactions(upload_id):
 
         if reader:
             print("start processing")
-            transactions = reader.read_file(file)
+            try:
+                transactions = reader.read_file(file)
+                update_upload_status(db, upload_id, ProcessingStatus.FINISHED)
 
-            update_upload_status(db, upload_id, ProcessingStatus.FINISHED)
+                for t in transactions:
+                    t.account_name = upload["account_name"]
+                    t.file_path = upload["file_path"]
 
-            for t in transactions:
-                t.account_name = upload["account_name"]
-                t.file_path = upload["file_path"]
+                pending_transactions[upload_id] = transactions
+                transactions_serialized = [t.to_dict() for t in transactions]
 
-            pending_transactions[upload_id] = transactions
-            transactions_serialized = [t.to_dict() for t in transactions]
+                return render_template("confirm-transactions-page.html", transactions=transactions_serialized, file_id=upload_id), 200
 
-            return render_template("confirm-transactions-page.html", transactions=transactions_serialized, file_id=upload_id), 200
+            except Exception as e:
+                print(f"Failed to parse file: {upload['file_path']}", e)
+                update_upload_status(db, upload_id, ProcessingStatus.READY)
 
         return "No parser found for " + upload["account_name"], 500
 

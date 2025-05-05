@@ -2,7 +2,8 @@ from transactions import Transaction
 
 
 def get_transactions(db):
-    rows = db.execute('SELECT * FROM transactions').fetchall()
+    rows = db.execute(
+        'SELECT * FROM transactions ORDER BY date DESC, account_name, category').fetchall()
     return [dict(row) for row in rows]
 
 
