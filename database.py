@@ -1,28 +1,39 @@
-import sqlite3
-from config import DB_PATH, UPLOAD_DIR
 import os
+import sqlite3
+from config import DB_PATH, STAGE
+
+# Ensure the directory for the database exists
+if os.path.dirname(DB_PATH):
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
 def get_connection():
-    return sqlite3.connect(DB_PATH)
+    db = sqlite3.connect(DB_PATH)
+    db.row_factory = sqlite3.Row
+    return db
 
 
-def init():
+def init_tables():
     print("Initializing db connection...")
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
+
+        if STAGE == "DEVELOPMENT":
+            print("dropping tables.")
+            # cursor.execute('DROP TABLE IF EXISTS uploads')
+            # cursor.execute('DROP TABLE IF EXISTS transactions')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS uploads (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 account_name TEXT NOT NULL,
                 file_path TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                client_ip TEXT NOT NULL
+                status TEXT NOT NULL DEFAULT READY
             )
         ''')
-
-        cursor.execute('DROP TABLE IF EXISTS transactions')
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transactions (
@@ -43,13 +54,3 @@ def init():
         print(e)
         print("Failed to connect to database.")
         exit(1)
-
-    # create uploads dir
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
-
-    if os.environ.get("STAGE", "") == "DEVELOPMENT":
-        print("Development mode is on")
-
-
-init()

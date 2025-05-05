@@ -6,25 +6,39 @@
 <table>
     <thead>
         <tr>
-            <th>ID</th>
             <th>Account Name</th>
             <th>File Path</th>
             <th>Created At</th>
+            <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for file in uploads %}
         <tr>
-            <td>{{ file["id"] }}</td>
             <td>{{ file["account_name"] }}</td>
             <td>{{ file["file_path"] }}</td>
             <td>{{ file["created_at"] }}</td>
+            <td>{{ file["status"] }}</td>
             <td>
                 <div>
                     <a href="/delete_upload/{{ file['id'] }}">Delete</a>
                     <br />
-                    <a href="/process_transactions/{{ file['id'] }}">Process Transactions</a>
+
+                    {% if file["status"] == "READY" %}
+                    <a href="/process_transactions/{{ file['id'] }}">Start Processing</a>
+                    <br />
+                    {% endif %}
+
+                    {% if file["status"] == "FINISHED" %}
+                    <a href="/view_transactions/{{ file['id'] }}">View Transactions</a>
+                    <br />
+                    <a href="/accept_transactions/{{ file['id'] }}">Accept</a>
+                    <br />
+                    <a href="/discard_transactions/{{ file['id'] }}">Discard</a>
+                    <br />
+                    {% endif %}
+
                 </div>
             </td>
         </tr>

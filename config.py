@@ -15,6 +15,8 @@ if STAGE == "PRODUCTION":
 else:
     DB_PATH = DEV_DB_PATH
 
+print("using database: ", DB_PATH)
+
 if not all([UPLOAD_DIR, DB_PATH]):
     print("env variable is missing.")
     exit(1)

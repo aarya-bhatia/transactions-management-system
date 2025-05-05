@@ -1,66 +1,45 @@
-import sqlite3
-from config import DB_PATH, UPLOAD_DIR
-import os
-from database import get_connection
+from enum import Enum
 
 
-def get_uploads():
-    db_connection = sqlite3.connect(DB_PATH)
-    cursor = db_connection.cursor()
-    cursor.execute(
-        'SELECT id, account_name, file_path, created_at FROM uploads')
-    rows = cursor.fetchall()
-    db_connection.close()
+class ProcessingStatus(Enum):
+    READY = "READY"
+    IN_PROGRESS = "IN_PROGRESS"
+    FINISHED = "FINISHED"
+    ACCEPTED = "ACCEPTED"
 
-    uploads = [{"id": row[0], "account_name": row[1], "file_path": row[2],
-                "created_at": row[3]} for row in rows]
 
-    uploads = [upload for upload in uploads if os.path.exists(
-        upload["file_path"])]
+def update_upload_status(db, upload_id, status: ProcessingStatus):
+    db.execute("UPDATE uploads SET status=? WHERE id=?",
+               (status.name, upload_id))
+    db.commit()
 
+
+def get_uploads(db):
+    rows = db.execute('SELECT * FROM uploads').fetchall()
+    uploads = [dict(row) for row in rows]
     return uploads
 
 
-def add_upload(account_name, file_path, client_ip):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO uploads (account_name, file_path, client_ip)
-        VALUES (?, ?, ?)
-    ''', (account_name, file_path, client_ip))
-    conn.commit()
-    conn.close()
+def add_upload(db, account_name, file_path):
+    db.execute('''INSERT INTO uploads (account_name, file_path, status) VALUES (?, ?, ?)''',
+               (account_name, file_path, "READY"))
+    db.commit()
 
 
-def upload_exists(file_path):
-    # Check if file_path already exists in the database
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        'SELECT COUNT(*) FROM uploads WHERE file_path = ?', (file_path,))
-    ans = cursor.fetchone()[0] > 0
-    conn.close()
-    return ans
+def upload_exists(db, file_path):
+    row = db.execute(
+        'SELECT COUNT(*) FROM uploads WHERE file_path = ?', (file_path,)).fetchone()
+    return row[0] > 0
 
 
-def get_upload(id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        'SELECT id, account_name, file_path, created_at FROM uploads WHERE id=?', (id,))
-    ans = cursor.fetchone()
-    conn.close()
-    return {
-        "id": ans[0],
-        "account_name": ans[1],
-        "file_path": ans[2],
-        "created_at": ans[3]
-    }
+def get_upload(db, id):
+    row = db.execute('SELECT * FROM uploads WHERE id=?', (id,)).fetchone()
+    return dict(row) if row else None
 
 
-def delete_upload(id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM uploads WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
+def delete_upload(db, id):
+    upload = get_upload(db, id)
+    db.execute('DELETE FROM transactions WHERE file_path = ? AND account_name = ?',
+               (upload["file_path"], upload["account_name"]))
+    db.execute('DELETE FROM uploads WHERE id = ?', (id,))
+    db.commit()

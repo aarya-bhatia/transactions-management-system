@@ -3,3 +3,5 @@ uploads/
 *.env
 *.swp
 *.log
+.DS_STORE
+input/

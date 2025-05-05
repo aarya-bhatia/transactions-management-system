@@ -6,7 +6,6 @@
     <thead>
         <tr>
             <th>Account</th>
-            <th>File</th>
             <th>Date</th>
             <th>Description</th>
             <th>Amount</th>
@@ -18,7 +17,6 @@
         {% for t in transactions %}
         <tr>
             <td>{{ t["account_name"] }}</td>
-            <td>{{ t["file_path"] }}</td>
             <td>{{ t["date"] }}</td>
             <td>{{ t["description"] }}</td>
             <td>{{ t["amount"] }}</td>
