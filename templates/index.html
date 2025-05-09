@@ -6,9 +6,8 @@
 <table>
     <thead>
         <tr>
-            <th>Account Name</th>
-            <th>File Path</th>
-            <th>Created At</th>
+            <th>Account</th>
+            <th>File</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -16,26 +15,29 @@
     <tbody>
         {% for file in uploads %}
         <tr>
-            <td>{{ file["account_name"] }}</td>
-            <td>{{ file["file_path"] }}</td>
-            <td>{{ file["created_at"] }}</td>
+            <td>
+                <a href="/uploads/{{ file['_id'] }}">
+                    {{ file["account_name" ]}}
+                </a>
+            </td>
+            <td>{{ file["file_path"].split('/')[-1] }}</td>
             <td>{{ file["status"] }}</td>
             <td>
                 <div>
-                    <a href="/delete_upload/{{ file['id'] }}">Delete</a>
+                    <a href="/delete_upload/{{ file['_id'] }}">Delete</a>
                     <br />
 
-                    {% if file["status"] == "READY" %}
-                    <a href="/process_transactions/{{ file['id'] }}">Start Processing</a>
+                    {% if file["status"] == "ready" %}
+                    <a href="/process_transactions/{{ file['_id'] }}">Process</a>
                     <br />
                     {% endif %}
 
-                    {% if file["status"] == "FINISHED" %}
-                    <a href="/view_transactions/{{ file['id'] }}">View Transactions</a>
+                    {% if file["status"] == "finished" %}
+                    <a href="/accept_transactions/{{ file['_id'] }}">Accept</a>
                     <br />
-                    <a href="/accept_transactions/{{ file['id'] }}">Accept</a>
+                    <a href="/discard_transactions/{{ file['_id'] }}">Discard</a>
                     <br />
-                    <a href="/discard_transactions/{{ file['id'] }}">Discard</a>
+                    <a href="/process_transactions/{{ file['_id'] }}">Reprocess</a>
                     <br />
                     {% endif %}
 

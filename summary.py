@@ -8,7 +8,7 @@ sns.set_theme()
 
 
 def format_currency(value):
-    return f"${value:,.2f}"
+    return f"{value:,.2f}"
 
 
 def save_pie_chart(values, labels, title, filename):
@@ -104,15 +104,15 @@ def create_pivot_table_html(df):
     return html_content
 
 
-def get_summary_stats(uploads, transactions):
+def get_summary_stats(transactions):
     df = pd.DataFrame(transactions)
     print(df.head())
 
     df['date'] = pd.to_datetime(df['date'])
     df['month_year'] = df['date'].dt.strftime('%b %Y')
 
-    expenses = df[df["type"] == "DEBIT"]
-    income = df[df["type"] == "CREDIT"]
+    expenses = df[df["amount"] < 0]
+    income = df[df["amount"] > 0]
 
     total_rent = expenses[expenses["category"] == "Rent"]["amount"].sum()
 

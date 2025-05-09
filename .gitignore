@@ -6,3 +6,4 @@ uploads/
 .DS_STORE
 input/
 static/
+data/
