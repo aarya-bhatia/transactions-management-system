@@ -8,7 +8,7 @@ sns.set_theme()
 
 
 def format_currency(value):
-    return f"{value:,.2f}"
+    return f"{abs(value):,.2f}"
 
 
 def save_pie_chart(values, labels, title, filename):
@@ -77,9 +77,6 @@ def draw_plots(stats):
 
 
 def create_pivot_table_html(df):
-    # Convert 'month' to datetime for proper sorting
-    df['month_dt'] = pd.to_datetime(df['month_year'], format='%b %Y')
-
     # Pivot using the datetime column as index
     pivoted = df.pivot_table(index='month_dt', columns='category',
                              values='amount', aggfunc='sum', fill_value=0)
@@ -110,6 +107,9 @@ def get_summary_stats(transactions):
 
     df['date'] = pd.to_datetime(df['date'])
     df['month_year'] = df['date'].dt.strftime('%b %Y')
+
+    # Convert 'month' to datetime for proper sorting
+    df['month_dt'] = pd.to_datetime(df['month_year'], format='%b %Y')
 
     expenses = df[df["amount"] < 0]
     income = df[df["amount"] > 0]

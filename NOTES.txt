@@ -1,0 +1,3 @@
+Tasks
+- add endpoint to rename category and update transactions in db
+- add endpoint for plots
