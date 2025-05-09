@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, session
 from functools import wraps
 from flask import Flask, request, render_template, redirect, g, jsonify
 import os
@@ -26,6 +26,10 @@ connection = db.uploads
 # Create Flask app
 app = Flask(__name__)
 
+# setup session
+app.config['SECRET_KEY'] = '3592c963-c4f1-4446-a75a-479099a16cb9'
+
+# account and parser config
 accounts = [
     {"name": "discover", "parser": DiscoverTransactionsReader},
     {"name": "fidelity_visa", "parser": FidelityVisaTransactionsReader},
@@ -36,13 +40,17 @@ accounts = [
     {"name": "bank_of_america_CCR", "parser": BankOfAmericaCCR},
 ]
 
+# define upload statuses
 status_ready = "ready"
 status_in_progress = "in_progress"
 status_finished = "finished"
 status_accepted = "accepted"
 
+# create local upload dir
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
+
+LOGIN_PASSWORD = os.environ.get("LOGIN_PASSWORD", "supersecret")
 
 
 def set_upload_status(upload, status):
@@ -124,6 +132,19 @@ def process_transactions(upload):
         return None
 
 
+def requires_auth():
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if "authenticated" not in session or session["authenticated"] == False:
+                session["next_url"] = request.url
+                return redirect("/login")
+            else:
+                return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 def validate_fields(required_fields):
     def decorator(f):
         @wraps(f)
@@ -157,18 +178,49 @@ def check_and_load_upload():
     return decorator
 
 
+@app.route('/login', methods=["GET"])
+def GET_login():
+    return render_template("login.html"), 200
+
+
+@app.route('/logout', methods=["GET"])
+def GET_logout():
+    session["authenticated"] = False
+    session.clear()
+    return render_template("login.html"), 200
+
+
+@app.route('/login', methods=["POST"])
+def POST_login():
+    password = request.form["password"]
+    if password != LOGIN_PASSWORD:
+        return "Unauthorized", 400
+
+    session["authenticated"] = True
+
+    if "next_url" in session and session["next_url"]:
+        next_url = session["next_url"]
+        del session["next_url"]
+        return redirect(next_url)
+
+    return "", 200
+
+
 @app.route('/')
+@requires_auth()
 def GET_index():
     uploads = connection.find()
     return render_template('index.html', uploads=uploads, accounts=accounts)
 
 
 @app.route('/transactions')
+@requires_auth()
 def GET_transactions():
     return render_template('view-transactions.html', transactions=get_all_transactions())
 
 
 @app.route('/delete_upload/<upload_id>', methods=['GET'])
+@requires_auth()
 @check_and_load_upload()
 def GET_delete_upload(upload_id):
     if os.path.exists(g.upload["file_path"]):
@@ -179,6 +231,7 @@ def GET_delete_upload(upload_id):
 
 
 @app.route('/upload_file', methods=['POST'])
+@requires_auth()
 def POST_upload_file():
     file = request.files['uploaded_file']
     if not file or file.filename == '':
@@ -202,6 +255,7 @@ def POST_upload_file():
 
 
 @app.route('/uploads/<upload_id>')
+@requires_auth()
 @check_and_load_upload()
 def GET_upload(upload_id):
     upload = g.upload
@@ -209,6 +263,7 @@ def GET_upload(upload_id):
 
 
 @app.route('/process_transactions/<upload_id>')
+@requires_auth()
 @check_and_load_upload()
 def GET_process_transactions(upload_id):
     upload = g.upload
@@ -227,6 +282,7 @@ def GET_process_transactions(upload_id):
 
 
 @app.route("/reset_upload_status/<upload_id>")
+@requires_auth()
 @check_and_load_upload()
 def GET_reset_upload_status(upload_id):
     upload = g.upload
@@ -243,6 +299,7 @@ def GET_reset_upload_status(upload_id):
 
 
 @app.route("/accept_transactions/<upload_id>")
+@requires_auth()
 @check_and_load_upload()
 def GET_accept_transactions(upload_id):
     upload = g.upload
@@ -254,6 +311,7 @@ def GET_accept_transactions(upload_id):
 
 
 @app.route("/discard_transactions/<upload_id>")
+@requires_auth()
 @check_and_load_upload()
 def GET_discard_transactions(upload_id):
     upload = g.upload
@@ -264,6 +322,7 @@ def GET_discard_transactions(upload_id):
 
 
 @app.route("/summary")
+@requires_auth()
 def GET_summary():
     transactions = get_all_transactions()
     print("computing stats...")
