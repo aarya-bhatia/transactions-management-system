@@ -363,7 +363,7 @@ def GET_summary():
     pivot_table = pivot_table_with_mean_and_sum(pivoted=pivot_table)
 
     cols = pivot_table.columns.tolist()
-    new_order = cols[-2:] + cols[:-2]  # Move last two to the front
+    new_order = reversed(cols)
     pivot_table = pivot_table[new_order]
 
     table_html = pivot_table_to_html(pivot_table)

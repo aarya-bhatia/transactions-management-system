@@ -27,6 +27,8 @@
 
 <p>Balance: {{ stats["total_balance"] }}</p>
 
-{{ table_html | safe }}
+<div style="overflow: scroll; padding: 10px; border: 2px solid black; ">
+    {{ table_html | safe }}
+</div>
 
 <!-- {% endblock %} -->

@@ -117,11 +117,11 @@ def pivot_table_to_html(pivoted):
     html_content += "</tr>"
 
     for label, row in pivoted.iterrows():
-        html_content += f"<tr><td><strong>{label}</strong></td>"
+        html_content += f"<tr><td><strong><a href='/categories/{label}'>{label}</a></strong></td>"
         for val in row[:2]:
-            html_content += f"<td><strong>{int(val)}</strong></td>"
+            html_content += f"<td><strong>{val:.2f}</strong></td>"
         for val in row[2:]:
-            html_content += f"<td>{int(val)}</td>"
+            html_content += f"<td>{val:.2f}</td>"
         html_content += "</tr>"
 
     html_content += "</table>"
