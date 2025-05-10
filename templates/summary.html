@@ -16,13 +16,9 @@
 
 <h4>Summary</h4>
 
-<p>Monthly Expenses</p>
-{{ stats["expense_table_html"] | safe }}
+<p>Balance: {{ stats["total_balance"] }}</p>
 
-<hr />
-
-<p>Monthly Income</p>
-{{ stats["income_table_html"] | safe }}
+{{ stats["pivot_table_html"] | safe }}
 
 <!-- <br />
 <p>Plots</p> -->

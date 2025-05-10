@@ -9,6 +9,8 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson.objectid import ObjectId
 import urllib
+import numpy as np
+from scipy.interpolate import CubicSpline
 
 # Load environment variables
 load_dotenv()
@@ -226,7 +228,9 @@ def GET_transactions_by_category(category):
     print("Search for category: ", category)
     ts = []
     for row in connection.find({"transactions.category": category}):
-        ts.extend(row["transactions"])
+        for t in row["transactions"]:
+            if t["category"] == category:
+                ts.append(t)
 
     return jsonify({"transactions": ts})
 
@@ -354,9 +358,73 @@ def GET_summary():
     transactions = get_all_transactions()
     print("computing stats...")
     stats = get_summary_stats(transactions)
-    # print("drawing plots...")
-    # draw_plots(stats)
     return render_template("summary.html", stats=stats), 200
+
+
+@app.route("/get-chart-data")
+def GET_get_chart_data():
+    transactions = get_all_transactions()
+    stats = get_summary_stats(transactions)
+    pivoted = stats["pivot_table"]
+
+    # Step 2: Combine categories using a dictionary
+    category_groups = {
+        'food': ['groceries', 'dining', 'drug store'],
+        'leisure': ['entertainment', 'shopping', 'friends', 'travel', 'family/friends'],
+        'income': ['paycheck', 'interest', 'rewards', 'refund'],
+        'housing': ['rent', 'household'],
+    }
+
+    for new_cat, old_cats in category_groups.items():
+        # Sum across all matching old categories (use .get to avoid KeyErrors)
+        pivoted[new_cat] = pivoted[old_cats].sum(axis=1)
+
+    flattened_old = [cat for group in category_groups.values()
+                     for cat in group]
+    pivoted.drop(
+        columns=[c for c in flattened_old if c in pivoted.columns], inplace=True)
+
+    # Step 3: Drop unwanted categories
+    categories_to_drop = ['Total', 'Avg', 'card payment', 'initial balance']
+    pivoted.drop(
+        columns=[c for c in categories_to_drop if c in pivoted.columns], inplace=True)
+
+    # Step 4: Drop unwanted months (e.g., first 3)
+    pivoted = pivoted.iloc[:-2]
+    pivoted_logged = pivoted.map(lambda x: np.sign(x) * np.log1p(abs(x)))
+
+    labels = pivoted.index.tolist()
+    datasets = [
+        {
+            'label': category,
+            # 'data': pivoted[category].tolist(),
+            'data': pivoted_logged[category].tolist(),
+        }
+        for category in pivoted.columns
+    ]
+
+    x = np.arange(len(pivoted))  # x = months (or time axis)
+    smoothed_datasets = []
+
+    for category in pivoted.columns:
+        y = pivoted_logged[category].values
+        cs = CubicSpline(x, y)
+
+        # Smooth the curve with 500 points
+        x_smooth = np.linspace(0, len(pivoted)-1, 60)
+        y_smooth = cs(x_smooth)
+
+        smoothed_datasets.append({
+            'label': category,
+            'data': y_smooth.tolist()  # Convert the smoothed data to list for JSON
+        })
+
+    return jsonify({'labels': labels, 'datasets': datasets, 'smoothed_datasets': smoothed_datasets})
+
+
+@app.route("/plot")
+def GET_plot():
+    return render_template("plot.html"), 200
 
 
 if __name__ == '__main__':

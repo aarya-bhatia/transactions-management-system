@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chart Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <canvas id="pivotChart"></canvas>
+
+    <script>
+        function createLineChart(data) {
+            const ctx = document.getElementById('pivotChart').getContext('2d');
+
+            data = {
+                labels: data.labels,
+                datasets: data.datasets
+            }
+
+            options = {
+                responsive: true,
+                tension: 0.3,  // Curves the lines
+                plugins: {
+                    datalabels: {
+                        display: true,  // Show data labels
+                        align: 'top',  // Position above the points
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        color: 'black',  // Set label color
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+
+            new Chart(ctx, { type: 'bar', data, options });
+        }
+
+        async function loadChart() {
+            const response = await fetch('/get-chart-data');
+            const data = await response.json();
+            createLineChart(data);
+        }
+
+        loadChart();
+    </script>
+
+
+
+</body>
+
+</html>

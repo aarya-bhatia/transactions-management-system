@@ -50,5 +50,29 @@
 
 {% include "partials/new-file-upload-form.html" %}
 
+
+
+<h4>Tools</h4>
+<p>Search transactions by category</p>
+<form id="tool1" onsubmit="return handleSubmitForm();">
+    <label for="category-name">Category: </label>
+    <input type="text" name="category" id="category-name" />
+    <br />
+    <input type="submit" value="Search" />
+</form>
+
+<script>
+    function handleSubmitForm() {
+        const categoryText = document.getElementById("category-name").value
+        console.log(categoryText)
+
+        const fullURL = window.location.href;
+        const baseURL = fullURL.split("?")[0];
+        console.log(baseURL);
+
+        window.location.href = baseURL + "/categories/" + categoryText
+        return false;
+    }
+</script>
 </div>
 {% endblock %}
