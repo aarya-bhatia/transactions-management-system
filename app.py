@@ -8,6 +8,7 @@ from summary import get_summary_stats, draw_plots
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson.objectid import ObjectId
+import urllib
 
 # Load environment variables
 load_dotenv()
@@ -217,6 +218,32 @@ def GET_index():
 @requires_auth()
 def GET_transactions():
     return render_template('view-transactions.html', transactions=get_all_transactions())
+
+
+@app.route('/categories/<path:category>')
+@requires_auth()
+def GET_transactions_by_category(category):
+    print("Search for category: ", category)
+    ts = []
+    for row in connection.find({"transactions.category": category}):
+        ts.extend(row["transactions"])
+
+    return jsonify({"transactions": ts})
+
+
+@app.route('/rename-category')
+@requires_auth()
+def GET_rename_category_transactions():
+    from_name = request.args.get("from")
+    to_name = request.args.get("to")
+    if not from_name or not to_name:
+        return "", 400
+
+    print(f"Rename category from '{from_name}' to '{to_name}'")
+    result = connection.update_many({"transactions.category": from_name}, {"$set": {
+                                    "transactions.$[elem].category": to_name}}, array_filters=[{"elem.category": from_name}])
+    print(result)
+    return "", 200
 
 
 @app.route('/delete_upload/<upload_id>', methods=['GET'])
