@@ -1,5 +1,7 @@
-{% extends "partials/base.html" %}
-{% block content %}
+<!-- {% extends "partials/base.html" %}
+{% block content %} -->
+
+<script src="{{ url_for('static', filename='sorttable.js') }}"></script>
 
 <style>
     td,
@@ -12,22 +14,19 @@
     tr:nth-child(even) {
         background-color: #dddddd;
     }
+
+    table.sortable thead {
+        background-color: #eee;
+        color: #666666;
+        font-weight: bold;
+        cursor: default;
+    }
 </style>
 
 <h4>Summary</h4>
 
 <p>Balance: {{ stats["total_balance"] }}</p>
 
-{{ stats["pivot_table_html"] | safe }}
+{{ table_html | safe }}
 
-<!-- <br />
-<p>Plots</p> -->
-
-<!-- <img src="{{ url_for('static', filename='total_expenses.png') }}" alt="plot" />
-<br />
-<img src="{{ url_for('static', filename='total_income.png') }}" alt="plot" />
-<br />
-<img src="{{ url_for('static', filename='balance_summary.png') }}" alt="plot" />
-<br /> -->
-
-{% endblock %}
+<!-- {% endblock %} -->

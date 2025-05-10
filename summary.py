@@ -86,7 +86,7 @@ def draw_plots(stats):
     plt.savefig("static/pivot_table.png")
 
 
-def create_pivot_table(df):
+def create_pivot_table(df: pd.DataFrame):
     # Pivot using the datetime column as index
     pivoted = df.pivot_table(index='month_dt', columns='category',
                              values='amount', aggfunc='sum', fill_value=0)
@@ -97,23 +97,32 @@ def create_pivot_table(df):
     # Optional: Format datetime back to "Month Year" strings for display
     pivoted.index = pivoted.index.strftime('%b %Y')
 
+    return pivoted
+
+
+def pivot_table_with_mean_and_sum(pivoted):
     pivoted['Total'] = pivoted.sum(axis=1)
     pivoted.loc['Total'] = pivoted.sum(numeric_only=True)
-
     pivoted['Avg'] = pivoted.mean(axis=1)
     pivoted.loc['Avg'] = pivoted.mean(numeric_only=True)
-
     return pivoted
 
 
 def pivot_table_to_html(pivoted):
-    html_content = "<table border='1'>"
-    html_content += "<tr><th>Month</th>" + \
-        "".join([f"<th>{col}</th>" for col in pivoted.columns]) + "</tr>"
+    html_content = "<table border='1' class='sortable'>"
 
-    for month, row in pivoted.iterrows():
-        html_content += f"<tr><td>{month}</td>" + "".join(
-            [f"<td>{format_currency(val)}</td>" for val in row]) + "</tr>"
+    html_content += "<tr><th>Category</th>"
+    for col in pivoted.columns:
+        html_content += f"<th>{col}</th>"
+    html_content += "</tr>"
+
+    for label, row in pivoted.iterrows():
+        html_content += f"<tr><td><strong>{label}</strong></td>"
+        for val in row[:2]:
+            html_content += f"<td><strong>{int(val)}</strong></td>"
+        for val in row[2:]:
+            html_content += f"<td>{int(val)}</td>"
+        html_content += "</tr>"
 
     html_content += "</table>"
 
@@ -190,16 +199,5 @@ def get_summary_stats(transactions):
 
     return {
         "total_balance": total_balance,
-        # "pie_chart_values": pie_chart_values,
-        # "pie_chart_labels": pie_chart_labels,
-        # "total_expense": total_expense,
-        # "total_income": total_income,
-        # "total_paycheck_income": total_paycheck_income,
-        # "total_savings": total_savings,
-        # "total_investment": total_investment,
-        # "monthly_paycheck_income": monthly_paycheck_result,
-        # "category_total_expenses": category_total_expenses,
-        # "category_total_income": category_total_income,
         "pivot_table": pivot_table,
-        "pivot_table_html": pivot_table_html
     }

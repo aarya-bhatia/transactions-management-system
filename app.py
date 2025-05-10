@@ -4,7 +4,7 @@ from flask import Flask, request, render_template, redirect, g, jsonify
 import os
 import time
 from parsers import DiscoverTransactionsReader, BiltMastercardTransactionsReader, AmericanExpressTransactionsReader, CapitalOneTransactionsReader, FidelityVisaTransactionsReader, BankOfAmerica, BankOfAmericaCCR
-from summary import get_summary_stats, draw_plots
+from summary import get_summary_stats, pivot_table_to_html, pivot_table_with_mean_and_sum
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson.objectid import ObjectId
@@ -358,10 +358,20 @@ def GET_summary():
     transactions = get_all_transactions()
     print("computing stats...")
     stats = get_summary_stats(transactions)
-    return render_template("summary.html", stats=stats), 200
+    pivot_table = stats["pivot_table"]
+    pivot_table = pivot_table.transpose()
+    pivot_table = pivot_table_with_mean_and_sum(pivoted=pivot_table)
+
+    cols = pivot_table.columns.tolist()
+    new_order = cols[-2:] + cols[:-2]  # Move last two to the front
+    pivot_table = pivot_table[new_order]
+
+    table_html = pivot_table_to_html(pivot_table)
+    return render_template("summary.html", stats=stats, table_html=table_html), 200
 
 
 @app.route("/get-chart-data")
+@requires_auth()
 def GET_get_chart_data():
     transactions = get_all_transactions()
     stats = get_summary_stats(transactions)
@@ -423,6 +433,7 @@ def GET_get_chart_data():
 
 
 @app.route("/plot")
+@requires_auth()
 def GET_plot():
     return render_template("plot.html"), 200
 
